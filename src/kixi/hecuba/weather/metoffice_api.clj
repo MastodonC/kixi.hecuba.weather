@@ -26,10 +26,10 @@
 (defn run-data-pull [startdate-str enddate-str] 
   (let [fmt (f/formatter "dd/MM/YYYY")
         timefmt (f/formatter "HH00")
-        startdate (f/parse fmt startdate-str)
-        stopdate (f/parse fmt enddate-str)]
-    (->> (tp/periodic-seq startdate (t/hours 1))
-         (take-while #(t/before? % (t/minus stopdate (t/days 1))))
+        start (f/parse fmt startdate-str)
+        end (f/parse fmt enddate-str)]
+    (->> (tp/periodic-seq start (t/hours 1))
+         (take-while #(t/before? % (t/minus end (t/days 1))))
          (map #(pull-data (f/unparse fmt %) (f/unparse timefmt %)))
          doall)))
 
