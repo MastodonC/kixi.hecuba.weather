@@ -23,12 +23,12 @@
 (defn save-file [file-name file-content] 
   (spit file-name file-content))
 
-(defn run-data-pull [startdate enddate] 
+(defn run-data-pull [startdate-str enddate-str] 
   (let [fmt (f/formatter "dd/MM/YYYY")
         timefmt (f/formatter "HH00")
-        month (f/parse fmt startdate)
-        stopdate (f/parse fmt enddate)]
-    (->> (tp/periodic-seq month (t/hours 1))
+        startdate (f/parse fmt startdate-str)
+        stopdate (f/parse fmt enddate-str)]
+    (->> (tp/periodic-seq startdate (t/hours 1))
          (take-while #(t/before? % (t/minus stopdate (t/days 1))))
          (map #(pull-data (f/unparse fmt %) (f/unparse timefmt %)))
          doall)))
