@@ -24,7 +24,7 @@
   (spit file-name file-content))
 
 (defn run-data-pull [startdate enddate] 
-  (let [fmt (f/formatter "dd/mm/YYYY")
+  (let [fmt (f/formatter "dd/MM/YYYY")
         timefmt (f/formatter "HH00")
         month (f/parse fmt startdate)
         stopdate (f/parse fmt enddate)]
