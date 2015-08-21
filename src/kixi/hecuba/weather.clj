@@ -1,6 +1,4 @@
-(ns kixi.hecuba.weather)
+(ns kixi.hecuba.weather
+  (:require [kixi.hecuba.weather.metofficeapi :as ma]))
 
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
+
