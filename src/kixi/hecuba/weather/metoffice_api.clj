@@ -6,7 +6,7 @@
             [clojure.java.io :as io]
             [clj-http.client :as client]))
 
-(defn pull-data [querydate querytime]
+(defn pull-data [querydate querytime file-path]
   (->> (client/post "http://datagovuk.cloudapp.net/query"
                     {:form-params {
                                    :Type "Observation"
@@ -18,18 +18,18 @@
                      :follow-redirects true})
        :body
        (re-find #"https://datagovuk.blob.core.windows.net/csv/[a-z0-9]+.csv")
-       slurp))
+       slurp
+       (spit (str file-path (str/replace querydate #"/" "-") "-" querytime ".csv"))))
 
 (defn save-file [file-name file-content] 
   (spit file-name file-content))
 
-(defn run-data-pull [startdate-str enddate-str] 
+(defn run-data-pull [startdate-str enddate-str file-path] 
   (let [fmt (f/formatter "dd/MM/YYYY")
         timefmt (f/formatter "HH00")
         start (f/parse fmt startdate-str)
         end (f/parse fmt enddate-str)]
     (->> (tp/periodic-seq start (t/hours 1))
          (take-while #(t/before? % (t/minus end (t/days 1))))
-         (map #(pull-data (f/unparse fmt %) (f/unparse timefmt %)))
-         doall)))
-
+         (map #(pull-data (f/unparse fmt %) (f/unparse timefmt %) file-path))
+         )))
