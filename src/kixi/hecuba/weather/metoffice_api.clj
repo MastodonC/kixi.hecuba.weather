@@ -8,13 +8,12 @@
 
 (defn pull-data [querydate querytime file-path]
   (->> (client/post "http://datagovuk.cloudapp.net/query"
-                    {:form-params {
-                                   :Type "Observation"
+                    {:form-params {:Type "Observation"
                                    :PredictionSiteID "ALL"
                                    :ObservationSiteID "ALL"
                                    :Date querydate ;; dd/mm/yyyy
                                    :PredictionTime querytime ;; 0000
-                                   }
+}
                      :follow-redirects true})
        :body
        (re-find #"https://datagovuk.blob.core.windows.net/csv/[a-z0-9]+.csv")
@@ -31,5 +30,4 @@
         end (f/parse fmt enddate-str)]
     (->> (tp/periodic-seq start (t/hours 1))
          (take-while #(t/before? % (t/minus end (t/days 1))))
-         (map #(pull-data (f/unparse fmt %) (f/unparse timefmt %) file-path))
-         )))
+         (map #(pull-data (f/unparse fmt %) (f/unparse timefmt %) file-path)))))
