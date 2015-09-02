@@ -6,9 +6,12 @@
             [clojure.java.io :as io]
             [clj-http.client :as client]
             [clojure.data.csv :as csv]
+            [clojure.data.json :as json]
             [clojure.set :as set]))
 
 (def devices-file (io/resource "live-devicesensors.csv"))
+
+(def tformat (f/formatter "YYYY-MM-dd HH:mm"))
 
 (def tbase 15.5)
 
@@ -88,6 +91,30 @@
                     keep-temp-date-time))
          (reduce concat)
          (group-by :site-code))))
+
+(defn push-payload-to-hecuba [entity-id device-id] 
+  
+)
+
+(defn create-sensor-measurements [observed-data]
+  (map (fn [observation]
+         (let [maxmin (get-max-and-min (second observation))
+               degreedays (calc-degreedays-mckiver tbase (:min maxmin) (:max maxmin))
+               obs-date (:date (first (second observation)))]
+           (-> (mapv (fn [site-obs]
+                       {:value (:temperature site-obs)
+                        :type "Temperature"
+                        :timestamp (f/unparse (f/formatters :date-time) 
+                                              (f/parse tformat (str (:date site-obs) " " (:time site-obs))))
+                        }) (second observation))
+               (conj 
+                     {:value degreedays
+                      :type "Temperature_degreeday"
+                      :timestamp (f/unparse (f/formatters :date-time) 
+                                            (f/parse tformat (str obs-date " 00:00")))})
+               (json/write-str)))) 
+        observed-data))
+
 
 (comment (get-daily-temp "31/08/2015")
          (get-daily-temp ;; Yesterday's weather data
