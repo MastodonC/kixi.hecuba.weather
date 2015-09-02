@@ -92,9 +92,20 @@
          (reduce concat)
          (group-by :site-code))))
 
-(defn push-payload-to-hecuba [entity-id device-id] 
-  
-)
+(defn push-payload-to-hecuba [json-payload entity-id device-id]
+  (clojure.pprint/pprint (json/write-str {:measurements json-payload}))
+  (comment (try (client/post 
+          (str url "entities/" entity-id "/devices/" device-id "/measurements/")
+          {:basic-auth [user pwd]
+           :body (json/write-str 
+                  {:measurements json-payload})
+           :headers {"X-Api-Version" "2"}
+           :content-type :json
+           :socket-timeout 20000
+           :conn-timeout 20000  
+           :accept "application/json"})
+         (catch Exception e (str "Caught Exception " (.getMessage e))))
+))
 
 (defn create-sensor-measurements [observed-data]
   (map (fn [observation]
@@ -112,7 +123,8 @@
                       :type "Temperature_degreeday"
                       :timestamp (f/unparse (f/formatters :date-time) 
                                             (f/parse tformat (str obs-date " 00:00")))})
-               (json/write-str)))) 
+               (json/write-str)
+               ))) 
         observed-data))
 
 
