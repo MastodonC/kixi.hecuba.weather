@@ -7,7 +7,9 @@
                  [org.clojure/data.csv  "0.1.2"]
                  [clj-http              "2.0.0"]
                  [clj-time              "0.10.0"]
-                 [org.clojure/data.json "0.2.6"]]
+                 [org.clojure/data.json "0.2.6"]
+                 [org.clojure/tools.cli "0.3.3"]]
   :plugins [[lein-cljfmt     "0.1.11"]
             [jonase/eastwood "0.2.1"]
-            [lein-kibit      "0.1.2"]])
+            [lein-kibit      "0.1.2"]]
+  :main kixi.hecuba.weather.core)
