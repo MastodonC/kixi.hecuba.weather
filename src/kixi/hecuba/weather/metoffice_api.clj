@@ -8,6 +8,8 @@
             [clojure.data.csv :as csv]
             [clojure.set :as set]))
 
+(def devices-file (io/resource "live-devicesensors.csv"))
+
 (def tbase 15.5)
 
 (defn format-key [str-key]
@@ -16,6 +18,13 @@
         clojure.string/lower-case
         (clojure.string/replace #" " "-")
         keyword)))
+
+(defn load-csv-file [filename]
+  (let [file-info (csv/read-csv (slurp filename) :quot-char \" :separator \,)
+        headers (map format-key (first file-info))]
+    (map #(zipmap headers %) (rest file-info))))
+
+(def devices (load-csv-file devices-file))
 
 (defn pull-data
   "Get Metoffice data as a string or a csv file"
