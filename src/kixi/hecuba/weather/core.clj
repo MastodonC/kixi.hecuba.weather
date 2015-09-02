@@ -2,7 +2,8 @@
   (:require [clj-time.core           :as t]
             [clj-time.format         :as f]
             [clj-time.periodic       :as tp]
-            [clojure.tools.cli       :refer [parse-opts]])
+            [clojure.tools.cli       :refer [parse-opts]]
+            [kixi.hecuba.weather.metoffice-api :as met])
   (:gen-class))
 
 (def cli-options
@@ -14,4 +15,8 @@
 (defn -main [& args]
   (let [{:keys [date user password] :as opts}
         (:options (parse-opts  args cli-options))]
-    (str date " - " user " - " password)))
+    (str date " - " user " - " password)
+    (comment
+      (-> (met/get-daily-temp date) 
+       met/create-sensor-measurements
+       (met/upload-measurements )))))

@@ -97,21 +97,6 @@
          (reduce concat)
          (group-by :site-code))))
 
-(defn push-payload-to-hecuba [json-payload entity-id device-id user pwd]
-  (clojure.pprint/pprint (json/write-str {:measurements json-payload}))
-  (try (client/post 
-        (str url "entities/" entity-id "/devices/" device-id "/measurements/")
-        {:basic-auth [user pwd]
-         :body (json/write-str 
-                {:measurements json-payload})
-         :headers {"X-Api-Version" "2"}
-         :content-type :json
-         :socket-timeout 20000
-         :conn-timeout 20000  
-         :accept "application/json"})
-       (catch Exception e (str "Caught Exception " (.getMessage e))))
-)
-
 (defn create-sensor-measurements [observed-data]
   (map (fn [observation]
          (let [maxmin (get-max-and-min (second observation))
@@ -132,6 +117,20 @@
             :entity-id (:entity-id (first (get devices-grp (first observation))))
             :device-id (:device-id (first (get devices-grp (first observation))))})) 
        observed-data))
+
+(defn push-payload-to-hecuba [json-payload entity-id device-id user pwd]
+  (clojure.pprint/pprint (json/write-str {:measurements json-payload}))
+  (try (client/post 
+        (str url "entities/" entity-id "/devices/" device-id "/measurements/")
+        {:basic-auth [user pwd]
+         :body (json/write-str 
+                {:measurements json-payload})
+         :headers {"X-Api-Version" "2"}
+         :content-type :json
+         :socket-timeout 20000
+         :conn-timeout 20000  
+         :accept "application/json"})
+       (catch Exception e (str "Caught Exception " (.getMessage e)))))
 
 (defn upload-measurements [payload-seq user pwd]
   (map #(push-payload-to-hecuba (:measurements %) 
