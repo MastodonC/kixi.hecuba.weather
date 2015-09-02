@@ -29,6 +29,8 @@
 
 (def devices (load-csv-file devices-file))
 
+(def devices-grp (group-by :property-code devices))
+
 (defn pull-data
   "Get Metoffice data as a string or a csv file"
   ([querydate querytime]
@@ -111,22 +113,28 @@
   (map (fn [observation]
          (let [maxmin (get-max-and-min (second observation))
                degreedays (calc-degreedays-mckiver tbase (:min maxmin) (:max maxmin))
-               obs-date (:date (first (second observation)))]
-           (-> (mapv (fn [site-obs]
-                       {:value (:temperature site-obs)
-                        :type "Temperature"
-                        :timestamp (f/unparse (f/formatters :date-time) 
-                                              (f/parse tformat (str (:date site-obs) " " (:time site-obs))))
-                        }) (second observation))
-               (conj 
-                     {:value degreedays
-                      :type "Temperature_degreeday"
-                      :timestamp (f/unparse (f/formatters :date-time) 
-                                            (f/parse tformat (str obs-date " 00:00")))})
-               (json/write-str)
-               ))) 
-        observed-data))
+               obs-date (:date (first (second observation)))
+               measurements (-> (mapv (fn [site-obs]
+                                        {:value (:temperature site-obs)
+                                         :type "Temperature"
+                                         :timestamp (f/unparse (f/formatters :date-time) 
+                                                               (f/parse tformat (str (:date site-obs) " " (:time site-obs))))
+                                         }) (second observation))
+                                (conj 
+                                 {:value degreedays
+                                  :type "Temperature_degreeday"
+                                  :timestamp (f/unparse (f/formatters :date-time) 
+                                                        (f/parse tformat (str obs-date " 00:00")))}))]
+           {:measurements measurements
+            :entity-id (:entity-id (first (get devices-grp (first observation))))
+            :device-id (:device-id (first (get devices-grp (first observation))))})) 
+       observed-data))
 
+(defn upload-measurements [payload-seq]
+  (map #(push-payload-to-hecuba (:measurements %) 
+                                (:entity-id %)
+                                (:entity-id %))
+       payload-seq))
 
 (comment (get-daily-temp "31/08/2015")
          (get-daily-temp ;; Yesterday's weather data
