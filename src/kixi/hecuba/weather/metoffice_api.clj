@@ -8,6 +8,8 @@
             [clojure.data.csv :as csv]
             [clojure.set :as set]))
 
+(def tbase 15.5)
+
 (defn format-key [str-key]
   (when (string? str-key)
     (-> str-key
@@ -32,6 +34,23 @@
   ([querydate querytime file-path]
    (spit (str file-path (str/replace querydate #"/" "-") "-" querytime ".csv")
          (pull-data querydate querytime))))
+
+(defn get-max-and-min [daily-readings]
+  (let [data (map (fn [t] (Float/parseFloat (:temperature t))) daily-readings)]
+    {:max (apply max data) :min (apply min data)}))
+
+;; The McKiver method (or British Gas method) as employed by the Met Office
+;; For more info see http://www.vesma.com/ddd/ddcalcs.htm 
+(defn calc-degreedays-mckiver [tbase tmin tmax] 
+  (if (> tmin tbase)
+    0
+    (if (> (/ (+ tmax tmin) 2) tbase)
+      (double (/ (- tbase tmin) 4)) 
+      (if (>= tmax tbase)
+        (double (- (/ (- tbase tmin) 2) (/ (- tmax tbase) 4))) 
+        (if (< tmax tbase)
+          (double (/ (- tbase (+ tbase tmin)) 2)) 
+          -1)))))
 
 (defn process-data-str
   "Return the data as a sequence of maps."
