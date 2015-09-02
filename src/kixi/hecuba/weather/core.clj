@@ -15,7 +15,7 @@
 (defn -main [& args]
   (let [{:keys [date user password] :as opts}
         (:options (parse-opts  args cli-options))]
-    (str date " - " user " - " password)
+    (println (str date " - " user " - " password))
     (comment
       (-> (met/get-daily-temp date) 
        met/create-sensor-measurements
