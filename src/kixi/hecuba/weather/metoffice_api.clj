@@ -102,44 +102,53 @@
          (let [maxmin (get-max-and-min (second observation))
                degreedays (calc-degreedays-mckiver tbase (:min maxmin) (:max maxmin))
                obs-date (:date (first (second observation)))
-               measurements (-> (mapv (fn [site-obs]
-                                        {:value (:temperature site-obs)
-                                         :type "Temperature"
-                                         :timestamp (f/unparse (f/formatters :date-time) 
-                                                               (f/parse tformat (str (:date site-obs) " " (:time site-obs))))
-                                         }) (second observation))
-                                (conj 
-                                 {:value degreedays
-                                  :type "Temperature_degreeday"
-                                  :sensor_id (:degreedays-sensor-id (first (get devices-grp (first observation))))
-                                  :timestamp (f/unparse (f/formatters :date-time) 
-                                                        (f/parse tformat (str obs-date " 00:00")))}))]
-           {:measurements measurements
-            :entity-id (:entity-id (first (get devices-grp (first observation))))
-            :device-id (:device-id (first (get devices-grp (first observation))))})) 
+               measurements (mapv (fn [site-obs]
+                                    {:value (:temperature site-obs)
+                                     :type "Temperature"
+                                     :timestamp (f/unparse (f/formatters :date-time) 
+                                                           (f/parse tformat (str (:date site-obs) " " (:time site-obs))))
+                                     }) (second observation))]
+           [{:measurements measurements
+             :entity-id (:entity-id (first (get devices-grp (first observation))))
+             :device-id (:device-id (first (get devices-grp (first observation))))}
+            {:measurements [{:value degreedays
+                             :type "Temperature_degreeday"                               
+                             :timestamp (f/unparse (f/formatters :date-time) 
+                                                   (f/parse tformat (str obs-date " 00:00")))}] 
+             :entity-id (:entity-id (first (get devices-grp (first observation))))
+             :device-id (:device-id (first (get devices-grp (first observation))))}
+            ])) 
        observed-data))
 
 (defn push-payload-to-hecuba [json-payload entity-id device-id user pwd]
-  (clojure.pprint/pprint (json/write-str {:measurements json-payload}))
   (try (client/post 
         (str url "entities/" entity-id "/devices/" device-id "/measurements/")
         {:basic-auth [user pwd]
-         :body (json/write-str 
-                {:measurements json-payload})
+         :body (json/write-str {:measurements json-payload})
          :headers {"X-Api-Version" "2"}
          :content-type :json
          :socket-timeout 20000
          :conn-timeout 20000  
          :accept "application/json"})
-       (catch Exception e (str "Caught Exception " (.getMessage e)))))
+       (catch Exception e (str "Caught Exception " (.getMessage e))))
+  
+  )
 
-(defn upload-measurements [payload-seq user pwd]
-  (map #(push-payload-to-hecuba (:measurements %) 
-                                (:entity-id %)
-                                (:device-id %) 
-                                user 
-                                pwd)
-       payload-seq))
+;; This is not how I want to do this, needs a refactor
+;; doseq will have a vector (payload) with two maps in
+;; send the first, then send the second. 
+(defn upload-measurements [vectormap-payloads user pwd]
+  (doseq [payload vectormap-payloads] 
+    (push-payload-to-hecuba (:measurements (first payload)) 
+                            (:entity-id (first payload))
+                            (:device-id (first payload)) 
+                            user 
+                            pwd)
+    (push-payload-to-hecuba (:measurements (second payload))
+                            (:entity-id (second payload))
+                            (:device-id (second payload))
+                            user
+                            pwd)))
 
 (comment (get-daily-temp "31/08/2015")
          (get-daily-temp ;; Yesterday's weather data
