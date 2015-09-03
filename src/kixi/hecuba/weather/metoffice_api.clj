@@ -9,7 +9,7 @@
             [clojure.data.json :as json]
             [clojure.set :as set]))
 
-(def devices-file (io/resource "live-devicesensors.csv"))
+(def devices-file (io/resource "live-device-sensors.csv"))
 
 (def tformat (f/formatter "YYYY-MM-dd HH:mm"))
 
@@ -111,6 +111,7 @@
                                 (conj 
                                  {:value degreedays
                                   :type "Temperature_degreeday"
+                                  :sensor_id (:degreedays-sensor-id (first (get devices-grp (first observation))))
                                   :timestamp (f/unparse (f/formatters :date-time) 
                                                         (f/parse tformat (str obs-date " 00:00")))}))]
            {:measurements measurements
