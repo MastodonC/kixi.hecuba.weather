@@ -1,6 +1,6 @@
 # kixi.hecuba.weather
 
-An additional library for kixi.hecuba to upload weather observation data. 
+A microservice for kixi.hecuba to upload weather observation data. 
 
 
 ## Building The Project
